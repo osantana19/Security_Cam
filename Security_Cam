@@ -1,0 +1,39 @@
+from picamera import PiCamera
+from time import sleep
+import smtplib
+from email.message import EmailMessage
+import imghdr
+
+threshold = 10
+sensitivity = 20
+forceCapture = True
+forceCaptureTime = 60 * 60      #Once an hour sends an email of a picture
+
+camera = PiCamera()
+camera.resolution = (1024, 764)
+camera.start_preview()
+for i in range(3):
+    sleep(3)
+    camera.capture('/home/pi/Desktop/images/image%s.jpg' % i)
+camera.stop_preview()
+
+Email_addr = 'youremail@gmail.com'
+Email_psswd = 'input password'
+
+msg = EmailMessage()
+msg['Subject'] = 'You\'ve been breached!'
+msg['From'] = Email_addr
+msg['To'] = Email_addr
+msg.set_content('Someone\'s in the server room')
+
+files = ['/home/pi/Desktop/images/image%s.jpg' %i]
+for file in files:
+    with open(file, 'rb') as f:
+        file_data = f.read()
+        file_type = imghdr.what(f.name)
+        file_name = f.name
+
+msg.add_attachment(file_data, maintype='image', subtype=file_type, filename= file_name)
+with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+    smtp.login(Email_addr, Email_psswd)
+    smtp.send_message(msg)
